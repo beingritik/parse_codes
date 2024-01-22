@@ -13,8 +13,9 @@ load_dotenv()
 
 # master_folder = env['DOWNLOAD_PDF_NEW_500']
 # csv_file_path = env['OUTPUT_CSV_NEW_500']
-master_folder = r"F:\ritik_project\newformat"
-csv_file_path = r"F:\ritik_project\output_newformat.csv"
+master_folder = r"D:\python3\newformat"
+csv_file_path = r"D:\python3\newformat.csv"
+empty_entries_csv_path = r"D:\python3\empty.csv"
 
 def extract_text_from_pdf(pdf_path):
     try:
@@ -60,9 +61,10 @@ def process_pdfs(master_folder):
 
     for root, dirs, files in os.walk(master_folder):
         for file in files:      
+            # if file.endswith(".pdf") and not file.startswith("YES"):
             if file.endswith(".pdf"):
                 pdf_path = os.path.join(root, file)
-                # print(f"Processing PDF: {pdf_path}")
+                print(f"Processing PDF: {pdf_path}")
                 text = extract_text_from_pdf(pdf_path)
                 # print("text",text)
                 language = identify_language(text)
@@ -71,13 +73,19 @@ def process_pdfs(master_folder):
                 # You can modify this condition based on your specific case
                 if language in ['en', 'hi']:
                     table_data = extract_table_fields(pdf_path)
+                    # print("table data========================,",table_data)
                     key = f"{file}_{language}"
                     data_dict[key] = table_data
+                    # os.rename(pdf_path, os.path.join(root, f"YES_{file}"))
                     # print("data_dict[key]",data_dict[key])
                 else:
                     key = f"{file}_{language}"
                     data_dict[key] =  {'Table_1': [{"Broken pdf and parsing failed for this document"}]}
+                    os.rename(pdf_path, os.path.join(root, f"BROKEN_{file}"))
+                    # os.rename(pdf_path, os.path.join(root, f"YES_{file}"))
+
     return data_dict
+
 
 if __name__ == "__main__":
     # master_folder = r"F:\harshit_bid_project\scrapping_pdfs"
@@ -130,7 +138,7 @@ if __name__ == "__main__":
                            output_dict[key_english_1] = parsed_english_value_1
                            
                     else:
-                        output_dict[pdf_name] =item
+                        output_dict[pdf_name] ={}
        
                 # Extract the first 9 key-value pairs
                 first_9_pairs = dict(list(output_dict.items())[:9])
@@ -142,7 +150,8 @@ if __name__ == "__main__":
         else:
             print(f"Unexpected value type for {pdf_name}: {type(value)}")
             # You can choose to store the value itself or any other representation in final_dict
-            final_dict[pdf_name] = {'Value': value}
+            # final_dict[pdf_name] = {'Value': value}
+            final_dict[pdf_name] = {}
 
 print("final_dict:", final_dict)
 
@@ -152,6 +161,7 @@ with open(csv_file_path, 'w', newline='', encoding='utf-8') as csv_file:
     # Write header (column names)
     if final_dict:
         header = list(next(iter(final_dict.values())).keys())
+        print ("header==",header)
         header.insert(0, 'Bid pdf name:')  # Add 'Key' column to the beginning
         csv_writer.writerow(header)
 
@@ -163,6 +173,23 @@ with open(csv_file_path, 'w', newline='', encoding='utf-8') as csv_file:
         print("no oer corrupt data for this pdf:{pdf_name}")
 
 print(f"Data has been written to {csv_file_path}")
+
+
+
+with open(empty_entries_csv_path, 'w', newline='', encoding='utf-8') as empty_csv_file:
+    empty_csv_writer = csv.writer(empty_csv_file)
+
+    # Write header (column names)
+    header_empty = ["Bid pdf name:"]
+    empty_csv_writer.writerow(header_empty)
+
+    # Write empty entries rows
+    for key, inner_dict in final_dict.items():
+        if not inner_dict or all(not bool(v) for v in inner_dict.values()):
+            row_empty = [key]
+            empty_csv_writer.writerow(row_empty)
+
+print(f" Empty list has been written to {empty_entries_csv_path}")
 
 
 
