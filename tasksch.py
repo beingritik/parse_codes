@@ -10,12 +10,30 @@ import re
 from os import environ as env
 from dotenv import load_dotenv
 load_dotenv()
+from datetime import datetime
+import time
+
+timestamp = time.time()
+formatted_datetime = datetime.fromtimestamp(timestamp)
+formatted_datetime = formatted_datetime.strftime("%Y-%m-%d______%H_%M")
+print(formatted_datetime)
+
+current_date = datetime.now().date()
+print(current_date)
+
+output_path = fr"D:\python3\output\output____{current_date}" 
+os.makedirs(output_path, exist_ok=True)
+
+open_path = fr"D:\python3\open\open____{current_date}" 
+os.makedirs(open_path, exist_ok=True)
+
 
 # master_folder = env['DOWNLOAD_PDF_NEW_500']
 # csv_file_path = env['OUTPUT_CSV_NEW_500']
 master_folder = r"D:\python3\newformat"
-csv_file_path = r"D:\python3\newformat.csv"
-empty_entries_csv_path = r"D:\python3\empty.csv"
+
+csv_file_path = f"{output_path}\output__{formatted_datetime}.csv"
+empty_entries_csv_path = f"{open_path}\open__{formatted_datetime}.csv"
 
 def extract_text_from_pdf(pdf_path):
     try:
@@ -61,8 +79,8 @@ def process_pdfs(master_folder):
 
     for root, dirs, files in os.walk(master_folder):
         for file in files:      
-            # if file.endswith(".pdf") and not file.startswith("YES"):
-            if file.endswith(".pdf"):
+            if file.endswith(".pdf") and not file.startswith("YES_"):
+            # if file.endswith(".pdf"):
                 pdf_path = os.path.join(root, file)
                 print(f"Processing PDF: {pdf_path}")
                 text = extract_text_from_pdf(pdf_path)
@@ -76,24 +94,20 @@ def process_pdfs(master_folder):
                     # print("table data========================,",table_data)
                     key = f"{file}_{language}"
                     data_dict[key] = table_data
-                    # os.rename(pdf_path, os.path.join(root, f"YES_{file}"))
+                    os.rename(pdf_path, os.path.join(root, f"YES_{file}"))
                     # print("data_dict[key]",data_dict[key])
                 else:
                     key = f"{file}_{language}"
                     data_dict[key] =  {'Table_1': [{"Broken pdf and parsing failed for this document"}]}
-                    os.rename(pdf_path, os.path.join(root, f"BROKEN_{file}"))
-                    # os.rename(pdf_path, os.path.join(root, f"YES_{file}"))
+                    # os.rename(pdf_path, os.path.join(root, f"BROKEN_{file}"))
+                    os.rename(pdf_path, os.path.join(root, f"YES_{file}"))
 
     return data_dict
 
 
 if __name__ == "__main__":
-    # master_folder = r"F:\harshit_bid_project\scrapping_pdfs"
-    # master_folder = r"F:\ritik_project\temp"
-    # master_folder = r"F:\ritik_project\expdf"
-    # master_folder = r"F:\ritik_project\poster"
     extracted_data = process_pdfs(master_folder)
-    print("extracted data--",extracted_data)
+    # print("extracted data--",extracted_data)
 
     final_dict = {}
     # # # Print the extracted data
@@ -161,7 +175,6 @@ with open(csv_file_path, 'w', newline='', encoding='utf-8') as csv_file:
     # Write header (column names)
     if final_dict:
         header = list(next(iter(final_dict.values())).keys())
-        print ("header==",header)
         header.insert(0, 'Bid pdf name:')  # Add 'Key' column to the beginning
         csv_writer.writerow(header)
 
